@@ -10,7 +10,7 @@ else # Linux or other
   GL_FLAGS=-lglfw -lGL -lpthread
 endif
 
-all: 6502
+all: 6502_lcd
 
 6502_lcd: 6502.o main_lcd.o 6502.h Makefile
 	${GCC} main_lcd.o 6502.o ${C_FLAGS} ${GL_FLAGS} -o $@
