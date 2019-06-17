@@ -8,6 +8,7 @@ typedef struct {
   u16 PC;
   union {
     struct { u8 C:1; u8 Z:1; u8 I:1; u8 D:1; u8 B:1; u8 u:1; u8 V:1; u8 S:1;};
+    //struct { u8 S:1; u8 V:1; u8 u:1; u8 B:1; u8 D:1; u8 I:1; u8 Z:1; u8 C:1;};
     u8 P; // flags
   };
 } cpu;

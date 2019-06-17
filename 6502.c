@@ -99,7 +99,8 @@ void ind()  {m=10; b=2; d=r16(f16()); } // indirect, 3
 void indx() {m=11; b=1; u8 r=f8(); d=r16((u8)(r + X)); } // indirect x
 void indy() {m=12; b=1; u8 r=f8(); d=r16((u8)(r)); cyc+=(d>>8)!=((d+Y)>>8) ? pg[op] : 0; d+=Y;} // indirect y
 
-//instructions
+// instructions
+// adc and sbc do dont support decimal mode now
 void adc() {
   u8 a = A; LDM; A=d+A+C; ZN(A);
   u16 t = (u16)d + (u16)a + (u16)C; C=(t > 0xff);
@@ -128,7 +129,6 @@ void bit() { LDM; S=(d>>7) & 1; V=(d>>6) & 1; Z=(d & A)==0; } //   Test Bits in 
 void bmi() { jr(S);  } //   Branch on Result Minus
 void bne() { jr(!Z); } //   Branch on Result not Zero
 void bpl() { jr(!S); } //   Branch on Result Plus
-void brk() { B=1;    } //   Force Break
 void bvc() { jr(!V); } //   Branch on Overflow Clear
 void bvs() { jr(V);  } //   Branch on Overflow Set
 
@@ -161,9 +161,9 @@ void ror() { LD_A_OR_M(); u8 c = C; C=(w & 1); w=(w>>1) | (c<<7); ZN(w); ST_A_OR
 void nop() {} //   No Operation
 
 void pha() { push8(A); } //   Push Accumulator on Stack
-void php() { push8(P | 0x10); } //   Push Processor Status on Stack
+void php() { B=1; push8(P); B=0; } //   Push Processor Status on Stack
 void pla() { A=pop8(); Z=(A==0); S=(A>>7)&0x1;} //   Pull Accumulator from Stack
-void plp() { P=pop8() & 0xef | 0x20;  } //   Pull Processor Status from Stack
+void plp() { P=(pop8() & 0xef) | 0x20; } //   Pull Processor Status from Stack
 
 void rti() {P=(pop8() & 0xef) | 0x20; PC=pop16();} //   Return from Interrupt
 void rts() {PC=pop16()+1;} //   Return from Subroutine
@@ -191,6 +191,8 @@ void slo() { asl(); ora(); }
 void rla() { rol(); and(); }
 void sre() { lsr(); eor(); }
 void rra() { ror(); adc(); }
+
+void brk() { PC++; push16(PC); php(); I = 1; PC=r16(0xfffe); } //   Force Break
 
 void (*addrtable[256])() = {
   imp, indx, imp, indx, zp, zp, zp, zp, imp, imm, acc, imm, abso, abso, abso, abso,
@@ -241,9 +243,12 @@ void print_mem(uint16_t off, uint16_t n) {
     }
   }
 }
-void reset() { PC=0xc000; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0;}
+//void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
+// nes
+void reset() { PC=0x400; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
+
 void print_regs() {
-  printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3ld", A, X, Y, P, SP, 3*prev_cyc % 341);
+  printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3llu", A, X, Y, P, SP, 3*prev_cyc % 341);
 }
 
 void cpu_step(u32 count) {

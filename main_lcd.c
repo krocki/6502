@@ -125,31 +125,47 @@ s32 lcd_init() {
     return 0;
 }
 
+int read_bin(const char* fname, u8* ptr) {
+  FILE *fp = fopen(fname, "rb");
+  if (fp) {
+    fseek(fp, 0, SEEK_END);
+    u32 len = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    fread(ptr, len, 1, fp);
+    fclose(fp);
+    printf("read file %s, %d bytes\n", fname, len);
+    return 0;
+  } else {
+    fprintf(stderr, "error opening %s\n", fname);
+    return -1;
+  }
+}
+
 void *nes(void *args) {
 
-  printf("%9.3f, starting...\n", get_time()-t0);
-  printf("%9.3f, reset ok, waiting for GL...\n", get_time()-t0);
+  //printf("%9.3f, starting...\n", get_time()-t0);
+  //printf("%9.3f, reset ok, waiting for GL...\n", get_time()-t0);
   while (!gl_ok) usleep(10);
-  printf("%9.3f, ACK\n", get_time()-t0);
-  reset();
-  PC=0x600;
-  SP=0xff;
-  memcpy(mem+0x600, prg, 66);
+  //printf("%9.3f, ACK\n", get_time()-t0);
+  // PC = 0xfffc, SP = 0xfd, P=0x24
+  //reset(0xfffc, 0xfd, 0x24);
+  read_bin((const char*)args, mem);
+  reset(0x400);
   double cpu_ts=get_time();
   while (gl_ok) {
     cpu_step(1);
     if (limit_speed) usleep(1000);
   }
-  printf("%9.6f, terminating\n", get_time()-t0);
-  printf("ticks %ld, time %.6f s, MHz %.3f\n", cyc, get_time()-cpu_ts, ((double)cyc/(1000000.0*(get_time()-cpu_ts))));
+  //printf("%9.6f, terminating\n", get_time()-t0);
+  printf("ticks %llu, time %.6f s, MHz %.3f\n", cyc, get_time()-cpu_ts, ((double)cyc/(1000000.0*(get_time()-cpu_ts))));
 
   return NULL;
 }
 
 int main(int argc, char **argv) {
 
-  if (argc >= 2) { show_debug=atoi(argv[1]);    }
-  if (argc >= 3) { limit_speed=atoi(argv[2]); }
+  if (argc >= 3) { show_debug=atoi(argv[2]);  }
+  if (argc >= 4) { limit_speed=atoi(argv[3]); }
 
   printf("DEBUG=%d\n", show_debug); printf("SPEED_LIMIT=%d\n", limit_speed);
   t0=get_time();
