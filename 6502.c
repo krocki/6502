@@ -9,7 +9,7 @@ u8 op = 0;
 u8 b=0; // operand length
 u8 m=0; // mode
 u16 d;
-
+u8 has_bcd = 1;
 u8 show_debug=0;
 
 #define STACK_PG 0x0100
@@ -102,15 +102,50 @@ void indy() {m=12; b=1; u8 r=f8(); d=r16((u8)(r)); cyc+=(d>>8)!=((d+Y)>>8) ? pg[
 // instructions
 // adc and sbc do dont support decimal mode now
 void adc() {
-  u8 a = A; LDM; A=d+A+C; ZN(A);
-  u16 t = (u16)d + (u16)a + (u16)C; C=(t > 0xff);
-  V = (!((a^d) & 0x80)) && (((a^A) & 0x80)>0 );
+  u8 a = A; LDM;
+  if (D & has_bcd) {
+    // a, d, C
+    u16 l = (u16)(a & 0x0f) + (d & 0x0f) + C;
+    u16 h = (u16)(a & 0xf0) + (d & 0xf0);
+    V=0; C=0; S=0; Z=0;
+    if (!((l + h) & 0xFF)) Z=1;
+    if (l > 0x09) {h += 0x10; l += 0x06;}
+    if (h & 0x80) S=1;
+    if (~(a ^ d) & (a ^ h) & 0x80) V=1;
+    if (h > 0x90) h += 0x60;
+    if (h >> 8) C=1;
+    A = (l & 0x0f) | (h & 0xf0);
+  } else
+  {
+    A=d+A+C; ZN(A);
+    u16 t = (u16)d + (u16)a + (u16)C; C=(t > 0xff);
+    V = (!((a^d) & 0x80)) && (((a^A) & 0x80)>0 );
+  }
 } //   Add Memory to Accumulator with Carry
 
 void sbc() {
-  u8 a = A; LDM; A=A-d-(1-C); ZN(A);
-  s16 t = (s16)a - (s16)d - (1-(s16)C); C=(t >= 0x0);
-  V = (((a^d) & 0x80)>0) && (((a^A) & 0x80)>0);
+  u8 a = A; LDM;
+  if (D && has_bcd) {
+    // a, d, C
+    u8 c = !C;
+    u16 t = a-d-c;
+    u16 l = (u16)(a & 0x0f) - (d & 0x0f) - c;
+    u16 h = (u16)(a & 0xf0) - (d & 0xf0);
+    V=0; C=0; S=0; Z=0;
+    if (l & 0x10) {l -= 6; h--;}
+    if ((a ^ d) & (a ^ t) & 0x80) V=1;
+    if (!(t >> 8)) C=1;
+    if (!(t << 8)) Z=1;
+    if (t & 0x80) S=1;
+    if (h & 0x0100) h -= 0x60;
+    A = (l & 0x0F) | (h & 0xF0);
+
+  } else
+  {
+    A=A-d-(1-C); ZN(A);
+    s16 t = (s16)a - (s16)d - (1-(s16)C); C=(t >= 0x0);
+    V = (((a^d) & 0x80)>0) && (((a^A) & 0x80)>0);
+  }
 } //   Subtract Memory from Accumulator with Borrow
 
 void cp(u8 a, u8 b) { u8 r=a-b; C=(a>=b); ZN(r); }
@@ -141,7 +176,6 @@ void dec() { u16 d0 = d; LDM; d--; d &= 0xff; ZN(d); w8(d0,d); } //   Decrement 
 void dex() { X--; ZN(X); } //   Decrement Index X by One
 void dey() { Y--; ZN(Y); } //   Decrement Index Y by One
 
-
 void inc() { u16 d0=d; LDM; d++; d &= 0xff; ZN(d); w8(d0,d); d=d0; } //   Increment Memory by One
 void inx() { X++; ZN(X); } //   Increment Index X by One
 void iny() { Y++; ZN(Y); } //   Increment Index Y by One
@@ -156,7 +190,6 @@ void lsr() { LD_A_OR_M(); C=w & 1; w>>=1; ZN(w); ST_A_OR_M(); } //   Shift Right
 void asl() { LD_A_OR_M(); C=(w>>7) & 1; w<<=1; ZN(w); ST_A_OR_M();} //   Shift Left One Bit (Memory or Accumulator)
 void rol() { LD_A_OR_M(); u8 c = C; C=(w>>7) & 1; w=(w<<1) | c; ZN(w); ST_A_OR_M(); } //   Rotate One Bit Left (Memory or Accumulator)
 void ror() { LD_A_OR_M(); u8 c = C; C=(w & 1); w=(w>>1) | (c<<7); ZN(w); ST_A_OR_M(); } //   Rotate One Bit Right (Memory or Accumulator)
-
 
 void nop() {} //   No Operation
 
@@ -245,7 +278,7 @@ void print_mem(uint16_t off, uint16_t n) {
 }
 //void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
 // nes
-void reset() { PC=0x400; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
+void reset(u16 ip) { PC=ip; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
 
 void print_regs() {
   printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3llu", A, X, Y, P, SP, 3*prev_cyc % 341);

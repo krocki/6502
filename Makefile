@@ -1,7 +1,7 @@
 GCC=gcc
 #GCC=arm-none-eabi
 
-C_FLAGS=-Ofast -fPIC
+C_FLAGS=-Ofast -fPIC -g
 OS:=$(shell uname)
 
 ifeq ($(OS),Darwin) #OSX
@@ -10,7 +10,10 @@ else # Linux or other
   GL_FLAGS=-lglfw -lGL -lpthread
 endif
 
-all: 6502_lcd
+all: 6502_lcd nes_lcd
+
+nes_lcd: 6502.o nes_lcd.o 6502.h Makefile
+	${GCC} nes_lcd.o 6502.o ${C_FLAGS} ${GL_FLAGS} -o $@
 
 6502_lcd: 6502.o main_lcd.o 6502.h Makefile
 	${GCC} main_lcd.o 6502.o ${C_FLAGS} ${GL_FLAGS} -o $@
@@ -22,4 +25,4 @@ all: 6502_lcd
 	${GCC} ${C_FLAGS} -c $< -o $@
 
 clean:
-	rm -rf *.o 6502
+	rm -rf *.o 6502 6502_lcd nes_lcd

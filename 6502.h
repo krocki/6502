@@ -31,9 +31,10 @@ cpu n;
 
 extern u8 mem[0x10000];  //64kB
 
+extern u8 has_bcd;
 extern u64 cyc;
 extern u8 op;
-extern void reset();
+extern void reset(u16 ip);
 extern void cpu_step(u32);
 extern u8 r8(u16);
 
