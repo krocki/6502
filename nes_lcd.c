@@ -132,7 +132,10 @@ int read_bin(const char* fname, u8* ptr) {
     fseek(fp, 0, SEEK_END);
     u32 len = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    fread(ptr, len, 1, fp);
+    if (!fread(ptr, len, 1, fp)) {
+      fprintf(stderr, "error reading %s\n", fname);
+      return -1;
+    }
     fclose(fp);
     printf("read file %s, %d bytes\n", fname, len);
     return 0;
@@ -149,21 +152,20 @@ void *nes(void *args) {
   while (!gl_ok) usleep(10);
   //printf("%9.3f, ACK\n", get_time()-t0);
   // PC = 0xfffc, SP = 0xfd, P=0x24
-  //reset(0xfffc, 0xfd, 0x24);
   u8 tmp[0x10000];
   read_bin((const char*)args, tmp);
   u16 load_at = 0xbff0;
   memset(mem,0x0,0x10000);
   memcpy(mem+load_at, tmp, 0x10000-load_at);
   has_bcd=0;
-  reset(0xc000);
+  reset(0xc000, 0xfd, 0x24);
   double cpu_ts=get_time();
   while (gl_ok) {
     cpu_step(1);
     if (limit_speed) usleep(1000);
   }
   //printf("%9.6f, terminating\n", get_time()-t0);
-  printf("ticks %llu, time %.6f s, MHz %.3f\n", cyc, get_time()-cpu_ts, ((double)cyc/(1000000.0*(get_time()-cpu_ts))));
+  printf("ticks %lu, time %.6f s, MHz %.3f\n", cyc, get_time()-cpu_ts, ((double)cyc/(1000000.0*(get_time()-cpu_ts))));
 
   return NULL;
 }

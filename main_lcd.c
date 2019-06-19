@@ -150,7 +150,7 @@ void *nes(void *args) {
   // PC = 0xfffc, SP = 0xfd, P=0x24
   //reset(0xfffc, 0xfd, 0x24);
   read_bin((const char*)args, mem);
-  reset(0x400);
+  reset(0x400, 0xfd, 0x24);
   double cpu_ts=get_time();
   while (gl_ok) {
     cpu_step(1);

@@ -11,6 +11,7 @@ u8 m=0; // mode
 u16 d;
 u8 has_bcd = 1;
 u8 show_debug=0;
+u8 limit_speed=0;
 
 #define STACK_PG 0x0100
 #define ZN(x) { Z=((x)==0); S=((x)>>7) & 0x1; }
@@ -276,12 +277,12 @@ void print_mem(uint16_t off, uint16_t n) {
     }
   }
 }
-//void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
+void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
 // nes
-void reset(u16 ip) { PC=ip; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
+// void reset(u16 ip) { PC=ip; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
 
 void print_regs() {
-  printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3llu", A, X, Y, P, SP, 3*prev_cyc % 341);
+  printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3lu", A, X, Y, P, SP, 3*prev_cyc % 341);
 }
 
 void cpu_step(u32 count) {

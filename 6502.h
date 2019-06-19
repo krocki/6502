@@ -34,8 +34,9 @@ extern u8 mem[0x10000];  //64kB
 extern u8 has_bcd;
 extern u64 cyc;
 extern u8 op;
-extern void reset(u16 ip);
+extern void reset(u16 ip, u8 sp, u8 flags);
 extern void cpu_step(u32);
 extern u8 r8(u16);
 
+extern u8 limit_speed;
 extern u8 show_debug;
