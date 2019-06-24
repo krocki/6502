@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "6502.h"
 
+//NES branch
+
 u8 mem[0x10000];
 u64 cyc = 0;
 u64 prev_cyc = 0;
