@@ -37,10 +37,5 @@ extern u8 op;
 extern void reset(u16 ip);
 extern void cpu_step(u32);
 extern u8 r8(u16);
-extern void w8(u16, u8);
 
 extern u8 show_debug;
-
-// NES
-extern void trigger_nmi();
-extern void trigger_irq();

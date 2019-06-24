@@ -12,8 +12,6 @@ u16 d;
 u8 has_bcd = 1;
 u8 show_debug=0;
 
-#define HAS_MMU 1
-
 #define STACK_PG 0x0100
 #define ZN(x) { Z=((x)==0); S=((x)>>7) & 0x1; }
 #define LDM { d=(m>2) ? r8(d) : d; }
@@ -74,16 +72,11 @@ const u8 pg[256] = { // page crossed cycl penalty
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0
 };
-#if HAS_MMU
-//void w8(u16 a, u8 v) { mem[a] = v; }
-//u8 r8(u16 a) { return mem[a]; }
-#else
 void w8(u16 a, u8 v) { mem[a] = v; }
 u8 r8(u16 a) { return mem[a]; }
 u16 r16_ok(u16 a) { return (r8(a) | (r8(a+1) << 8)); }
-u16 r16(u16 a) { u16 base=a & 0xff00; return (r8(a) | (r8(base|((u8)(a+1))) << 8)); }
-#endif
 //version with the bug
+u16 r16(u16 a) { u16 base=a & 0xff00; return (r8(a) | (r8(base|((u8)(a+1))) << 8)); }
 u8 f8() { return r8(PC++); }
 u16 f16() { return (f8() | ((f8())<<8)); }
 u8 pop8() { SP++; return r8(STACK_PG | SP);   }
@@ -271,18 +264,18 @@ void (*optable[256])() = { // opcode -> functions map
   beq,sbc,nop,isb,nop,sbc,inc,isb,sed,sbc,nop,isb,nop,sbc,inc,isb
 };
 
-//void print_mem(uint16_t off, uint16_t n) {
-//
-//  uint8_t col_count = 16;
-//  for (uint8_t j = 0; j < n; j++) {
-//    printf("0x%04X:", off);
-//    for (uint8_t i = 0; i < col_count; i++) {
-//      printf(" 0x%02x", r8(off));
-//      if (i==(col_count-1)) printf("\n");
-//      off++;
-//    }
-//  }
-//}
+void print_mem(uint16_t off, uint16_t n) {
+
+  uint8_t col_count = 16;
+  for (uint8_t j = 0; j < n; j++) {
+    printf("0x%04X:", off);
+    for (uint8_t i = 0; i < col_count; i++) {
+      printf(" 0x%02x", r8(off));
+      if (i==(col_count-1)) printf("\n");
+      off++;
+    }
+  }
+}
 //void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
 // nes
 void reset(u16 ip) { PC=ip; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
@@ -325,9 +318,3 @@ void cpu_step(u32 count) {
     cyc += ticktable[op];
   }
 }
-
-void trigger_nmi() { // non maskable interrupt
-  push16(PC); php(0); PC=r16(0xfffa); I=1; cyc+=7; }
-
-void trigger_irq() { // maskable int request
-  if (I==0) { push16(PC); php(0); PC=r16(0xfffe); I=1; cyc+=7; } }
