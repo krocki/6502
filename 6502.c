@@ -1,11 +1,18 @@
 #include <stdio.h>
 #include "6502.h"
 
+#if !HAS_MMU
 u8 mem[0x10000];
+void w8(u16 a, u8 v) { mem[a] = v; }
+u8 r8(u16 a) { return mem[a]; }
+u16 r16_ok(u16 a) { return (r8(a) | (r8(a+1) << 8)); }
+//version with the bug
+u16 r16(u16 a) { u16 base=a & 0xff00; return (r8(a) | (r8(base|((u8)(a+1))) << 8)); }
+#endif
 u64 cyc = 0;
 u64 prev_cyc = 0;
 u8 op = 0;
-//dessing modes
+//addressing modes
 u8 b=0; // operand length
 u8 m=0; // mode
 u16 d;
@@ -72,11 +79,6 @@ const u8 pg[256] = { // page crossed cycl penalty
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0
 };
-void w8(u16 a, u8 v) { mem[a] = v; }
-u8 r8(u16 a) { return mem[a]; }
-u16 r16_ok(u16 a) { return (r8(a) | (r8(a+1) << 8)); }
-//version with the bug
-u16 r16(u16 a) { u16 base=a & 0xff00; return (r8(a) | (r8(base|((u8)(a+1))) << 8)); }
 u8 f8() { return r8(PC++); }
 u16 f16() { return (f8() | ((f8())<<8)); }
 u8 pop8() { SP++; return r8(STACK_PG | SP);   }
@@ -264,21 +266,7 @@ void (*optable[256])() = { // opcode -> functions map
   beq,sbc,nop,isb,nop,sbc,inc,isb,sed,sbc,nop,isb,nop,sbc,inc,isb
 };
 
-void print_mem(uint16_t off, uint16_t n) {
-
-  uint8_t col_count = 16;
-  for (uint8_t j = 0; j < n; j++) {
-    printf("0x%04X:", off);
-    for (uint8_t i = 0; i < col_count; i++) {
-      printf(" 0x%02x", r8(off));
-      if (i==(col_count-1)) printf("\n");
-      off++;
-    }
-  }
-}
-//void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
-// nes
-void reset(u16 ip) { PC=ip; A=0x00; X=0x00; P=0x24; SP=0xfd; cyc=0; }
+void reset(u16 pc, u8 sp, u8 flags) { PC=pc; A=0x00; X=0x00; P=flags; SP=sp; cyc=0;}
 
 void print_regs() {
   printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3llu", A, X, Y, P, SP, 3*prev_cyc % 341);
