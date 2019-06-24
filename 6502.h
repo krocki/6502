@@ -31,7 +31,10 @@ cpu n;
 #define  V (n.V)
 #define  S (n.S)
 
+#if HAS_MMU
+#else
 extern u8 mem[0x10000];  //64kB
+#endif
 
 extern u8 has_bcd;
 extern u64 cyc;
