@@ -1,6 +1,8 @@
 #include "typedefs.h"
 #include <sys/time.h>
 
+#define HAS_MMU 1
+
 //registers
 typedef struct {
   // regs
@@ -37,6 +39,8 @@ extern u8 op;
 extern void reset(u16 ip, u8 sp, u8 flags);
 extern void cpu_step(u32);
 extern u8 r8(u16);
-
+extern void w8(u16, u8);
+extern u16 r16(u16);
+extern u16 r16_ok(u16);
 extern u8 limit_speed;
 extern u8 show_debug;

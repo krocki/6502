@@ -73,11 +73,16 @@ const u8 pg[256] = { // page crossed cycl penalty
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0
 };
+
+#if HAS_MMU
+#else
 void w8(u16 a, u8 v) { mem[a] = v; }
 u8 r8(u16 a) { return mem[a]; }
 u16 r16_ok(u16 a) { return (r8(a) | (r8(a+1) << 8)); }
 //version with the bug
 u16 r16(u16 a) { u16 base=a & 0xff00; return (r8(a) | (r8(base|((u8)(a+1))) << 8)); }
+#endif
+
 u8 f8() { return r8(PC++); }
 u16 f16() { return (f8() | ((f8())<<8)); }
 u8 pop8() { SP++; return r8(STACK_PG | SP);   }
