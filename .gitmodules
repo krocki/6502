@@ -1,3 +1,6 @@
 [submodule "as6502"]
 	path = as6502
 	url = https://github.com/krocki/as6502/
+[submodule "nv6502"]
+	path = nv6502
+	url = https://github.com/krocki/nv6502
