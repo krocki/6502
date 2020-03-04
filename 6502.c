@@ -14,7 +14,8 @@ u8 show_debug=0;
 extern char* asmtable[256];
 extern u8 ticktable[256];
 extern u8 pg[256];
-
+extern void (*addrtable[256])();
+extern void (*optable[256])();
 #define STACK_PG 0x0100
 #define ZN(x) { Z=((x)==0); S=((x)>>7) & 0x1; }
 #define LDM { d=(m>2) ? r8(d) : d; }
