@@ -1,0 +1,3 @@
+[submodule "as6502"]
+	path = as6502
+	url = https://github.com/krocki/as6502/

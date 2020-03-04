@@ -20,13 +20,6 @@ double get_time() {
   return (tv.tv_sec + tv.tv_usec * 1e-6);
 }
 
-u8 prg[]= {
-  0xa2,0x00,0xa9,0x00,0x85,0x00,0xa9,0x02,0x85,0x01,0x20,0x1f,0x06,0x81,0x00,0xe6,
-  0x00,0xf0,0x03,0x4c,0x0a,0x06,0xe6,0x01,0xa4,0x01,0xc0,0x06,0xd0,0xec,0x60,0xa5,
-  0x00,0x29,0x1f,0x85,0x02,0xa5,0x00,0x4a,0x4a,0x4a,0x4a,0x4a,0x85,0x03,0xa5,0x01,
-  0x38,0xe9,0x02,0x0a,0x0a,0x0a,0x05,0x03,0x25,0x02,0xf0,0x03,0xa9,0x02,0x60,0xa9,
-  0x0d,0x60}; // 66B
-
 // GL stuff
 #define AUTO_REFRESH 60
 #define OFFSET 64
@@ -96,7 +89,7 @@ s32 lcd_init() {
     glfwSetErrorCallback(error_callback);
     if (!glfwInit()) return -1;
 
-    window = open_window("NES", NULL, OFFSET, OFFSET);
+    window = open_window("6502", NULL, OFFSET, OFFSET);
     if (!window) { glfwTerminate(); return -1; }
 
     glfwGetWindowPos(window, &x, &y);
@@ -141,10 +134,8 @@ int read_bin(const char* fname, u8* ptr) {
   }
 }
 
-void *nes(void *args) {
+void *work(void *args) {
 
-  //printf("%9.3f, starting...\n", get_time()-t0);
-  //printf("%9.3f, reset ok, waiting for GL...\n", get_time()-t0);
   while (!gl_ok) usleep(10);
   //printf("%9.3f, ACK\n", get_time()-t0);
   // PC = 0xfffc, SP = 0xfd, P=0x24
@@ -170,15 +161,15 @@ int main(int argc, char **argv) {
   printf("DEBUG=%d\n", show_debug); printf("SPEED_LIMIT=%d\n", limit_speed);
   t0=get_time();
 
-  pthread_t nes_thread;
-  if(pthread_create(&nes_thread, NULL, nes, argv[1])) {
+  pthread_t cpu_thread;
+  if(pthread_create(&cpu_thread, NULL, work, argv[1])) {
     fprintf(stderr, "Error creating thread\n");
     return 1;
   }
 
   lcd_init();
 
-  if(pthread_join(nes_thread, NULL)) {
+  if(pthread_join(cpu_thread, NULL)) {
     fprintf(stderr, "Error joining thread\n");
     return 2;
   }
