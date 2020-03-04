@@ -29,7 +29,10 @@ Program execution:
 python3 6502.py -i sierp0.bin -o sierp0.gif
 ```
 
-The righthand side shows the framebuffer, the lefthand side show the memory region 0 - 0x200 and 0x600- ( ZP, STACK, PROGRAM )
+RIGHT: The framebuffer
+
+LEFT: The memory region 0 - 0x200 and 0x600- ( ZP, STACK, PROGRAM )
+
 <img src="python_out.gif" width=400/>
 
 Use GA to 'learn' a program:
